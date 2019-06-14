@@ -1,0 +1,208 @@
+﻿@{
+    ViewBag.Title = "Employee Management";
+}
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Managgement</title>
+
+    <link rel="stylesheet" href="//cdn.webix.com/site/webix.css?v=6.3.6" type="text/css" charset="utf-8">
+    <script src="//cdn.webix.com/site/webix.js?v=6.3.6" type="text/javascript" charset="utf-8"></script>
+
+</head>
+<body>
+
+    <div id="testC"></div>
+    <div id="testA"></div>
+    <div id="testB"></div>
+    <div id="areaA"></div>
+    <hr>
+
+    <script type="text/javascript" charset="utf-8">
+
+		var grid = {
+		    view: "datatable", id: "grid",
+		    columns:  [
+                      { id: "id", editor: "text", header: "", css: "ID", width: 50 },
+	                  { id: "Name", editor: "text", header: "Name", width: 200 },
+	                  { id: "FatherName", editor: "text", header: "FatherName", width: 80 },
+                      { id: "Age", editor: "text", header: "Age", width: 80 }
+                      ],
+		    autoheight: true,
+		    autowidth: true,
+		    select: "row", editable: true, editaction: "dblclick",
+		    editable: true,
+		    url: "/home/getemployees",
+		    		};
+
+		var buttons = {
+		    view: "toolbar", elements: [
+				{
+				    view: "button", value: "Add Row",
+				    click: function () {
+				        var data = {
+				            id: 0, Name: "", FatherName: "", Age: "35"
+				        };
+				        $$("grid").add(data);
+
+				        //webix.dp("grid").save(
+						//	webix.uid(),
+						//	"insert",
+						//	data
+						//).then(function (obj) {
+						//    data.id = obj.id; //server id
+						//    $$("grid").add(data);
+						//    $$("grid").select(data.id);
+						//}, function () {
+						//    webix.message("Data was not saved");
+						//});
+				    }
+				},
+				{
+				    view: "button", value: "Delete Row", id: "delBtn",
+				    click: function () {
+				        var id = $$("grid").getSelectedId();
+				        if (id) {
+				            var data = $$("grid").getItem(id.id);
+				            $$("grid").remove(id);
+
+				            //webix.dp("grid").save(
+							//	data.id,
+							//	"delete",
+							//	data
+							//).then(function () {
+							//    $$("grid").remove(id);
+							//}, function () {
+							//    webix.message("Data was not saved");
+							//});
+				        }
+				    }
+				},
+                {
+                    view: "button", value: "Save", id: "SaveBtn",
+                    click: function () {
+                        //webix.ajax().post("/home/SaveData", JSON.stringify(JSON.stringify($$("grid").serialize())), function (response) { });
+
+
+                        $.ajax({
+                            type: "POST",
+                            url: "/home/SaveData",
+                            data: JSON.stringify($$("grid").serialize()),
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            success: function (response) {
+                                $$("grid").refresh();
+                                webix.message("Data Saved successfully");
+                            },
+                            failure: function (response) {
+                                alert(response.responseText);
+                            },
+                            error: function (response) {
+                                alert(response.responseText);
+                            }
+                        });
+
+                    }
+                },
+				{}
+		    ]
+		};
+
+
+		webix.ui({
+		    container: "testA",
+		    rows: [
+                buttons, grid
+		    ]
+		});
+
+		$$("grid").attachEvent("onBeforeEditStop", function (values, editor) {
+		    var record = webix.copy(this.getItem(editor.row));
+		    record[editor.column] = values.value;
+
+		    webix.dp("grid").save(
+                editor.row,
+                "update",
+                record
+            ).then(function (obj) {
+                // close the editor
+                $$("grid").blockEvent();
+                $$("grid").editStop();
+                $$("grid").unblockEvent();
+            }, function () {
+                webix.message("Data was not saved");
+            });
+
+		    return false;
+		});
+
+
+gridc = webix.ui({
+    container: "testC",
+    view: "chart",
+    type: "bar",
+    value: "#Age#",
+    label: "#Age#",
+    //height: 100,
+    radius: 0,
+    height: 300,
+    width: 500,
+
+    barWidth: 30,
+    tooltip: {
+        template: "#Age#"
+    },
+    yAxis: {
+        start: 0,
+        end: 100,
+        step: 10,
+        title: "Age"
+    },
+    xAxis: {
+        title: "Employees",
+        template: "'#Name#"
+            },
+    url: "/home/getemployees"
+});
+
+
+
+webix.ui({
+    view: "form",
+    id: "myForm",
+
+    width: 600,
+    elements: [{
+        view: "tabview",
+        height: 600,
+        cells: [{
+            header: "<button class='webixbutton'>Employee Info</button>",
+            select: true,
+            body: {
+                d: "formView",
+                view: "htmlform",
+                content: "testA"
+            }
+        }, {
+            header: "<button class='webixbutton'>Employee Chart</button>",
+            body: {
+                    id: "formView",
+                    view: "htmlform",
+                    content: "testC"
+                 }
+
+            }
+        ]
+    }]
+});
+
+
+
+    </script>
+
+    <script src="https://cdn.ravenjs.com/3.19.1/raven.min.js" crossorigin="anonymous"></script>
+</body>
+</html>
